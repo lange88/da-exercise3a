@@ -4,7 +4,8 @@ import joptsimple.OptionSet;
 import java.net.MalformedURLException;
 import java.rmi.AlreadyBoundException;
 import java.rmi.RemoteException;
-import java.util.Arrays;
+import java.util.Random;
+import java.util.stream.IntStream;
 
 /**
  * Created by jeroen on 12/8/17.
@@ -13,8 +14,9 @@ import java.util.Arrays;
  */
 public class DA_BenOr_main {
     public static void main(String... args) {
-        int processIds[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-        int remoteProcessIds[] = {11, 12, 13, 14, 15, 16, 17, 18, 19, 20};
+        int processIds[] = IntStream.range(1, 10).toArray();
+        int remoteProcessIds[] = IntStream.range(11, 20).toArray();
+        int fractionMalicious = 20;
         String remoteHost = "192.168.56.102";
 
         // Create and install a security manager because we are using multiple
@@ -32,10 +34,11 @@ public class DA_BenOr_main {
         }
 
         for (int i : processIds) {
+            boolean malicious = new Random().nextFloat() < (1 / fractionMalicious);
             String name = "rmi://localhost:1099/DA_BenOr_" + i;
             DA_BenOr da = null;
             try {
-                da = new DA_BenOr(i, processIds, remoteProcessIds, 20, remoteHost);
+                da = new DA_BenOr(i, processIds, remoteProcessIds, fractionMalicious, remoteHost, malicious);
                 java.rmi.Naming.bind(name, da);
             } catch (AlreadyBoundException e) {
                 System.out.println("AlreadyBoundException occurred while binding object with RMI name: " + name);

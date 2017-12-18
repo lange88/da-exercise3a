@@ -18,18 +18,20 @@ public class DA_BenOr extends UnicastRemoteObject implements DA_BenOr_RMI, Runna
     private final Object msgLock = new Object();
     private int totalNodes;
     private int maliciousNodes;
+    private boolean isMalicious;
 
     private List<Message> messages = Collections.synchronizedList(new ArrayList<Message>());
     private int ultimateChosenValue = -1;
     private int value = -1;
 
-    DA_BenOr(int id, int[] processIds, int[] remoteProcessIds, int fractionMalicious, String remoteHost) throws RemoteException {
+    DA_BenOr(int id, int[] processIds, int[] remoteProcessIds, int fractionMalicious, String remoteHost, boolean malicious) throws RemoteException {
         this.id = id;
         this.processIds = processIds;
         this.remoteProcessIds = remoteProcessIds;
         this.remoteHost = remoteHost;
         this.totalNodes = processIds.length + remoteProcessIds.length;
         this.maliciousNodes = totalNodes / fractionMalicious;
+        this.isMalicious = malicious;
     }
 
     @Override
@@ -55,19 +57,17 @@ public class DA_BenOr extends UnicastRemoteObject implements DA_BenOr_RMI, Runna
             System.out.println("[" + id + "] entering notification phase (" + round + ")");
             try {
                 // notification phase
+                Thread.sleep(new Random().nextInt(2000)); // random delay before broadcasting
                 broadcast(new Message(Message.Type.NOTIFICATION, round, value));
 
                 /*Awaiting messages*/
                 while (countMessagesOfType(Message.Type.NOTIFICATION) < (totalNodes - maliciousNodes)) {
-                    try {
-                        Thread.sleep(500);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
+                    Thread.sleep(100);
                 }
                 System.out.println("[" + id + "] entering proposal phase (" + round + ")");
                 // proposal phase
                 int notificationValue = findNotificationValue();
+                Thread.sleep(new Random().nextInt(2000)); // random delay before broadcasting
                 broadcast(new Message(Message.Type.PROPOSAL, round, notificationValue));
 
                 if (decided) {
@@ -78,7 +78,7 @@ public class DA_BenOr extends UnicastRemoteObject implements DA_BenOr_RMI, Runna
                     //    messages = new ArrayList<>();
                     //}
                     while (countMessagesOfType(Message.Type.PROPOSAL) < (totalNodes - maliciousNodes)) {
-                        Thread.sleep(500);
+                        Thread.sleep(100);
                     }
                 }
                 System.out.println("[" + id + "] entering decision phase (" + round + ")");
