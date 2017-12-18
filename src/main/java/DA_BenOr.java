@@ -15,7 +15,7 @@ public class DA_BenOr extends UnicastRemoteObject implements DA_BenOr_RMI, Runna
     private int[] processIds;
     private int[] remoteProcessIds;
     private String remoteHost;
-
+    private final Object msgLock = new Object();
     private int totalNodes;
     private int maliciousNodes;
 
@@ -34,20 +34,30 @@ public class DA_BenOr extends UnicastRemoteObject implements DA_BenOr_RMI, Runna
 
     @Override
     public void receive(Message m) throws RemoteException {
-        messages.add(m);
+        synchronized(msgLock) {
+            messages.add(m);
+        }
+        System.out.println("[" + id + "] received message " + m);
     }
 
     @Override
     public void run() {
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
         int round = 1;
         boolean decided = false;
 
         while(true) {
+            System.out.println("[" + id + "] entering notification phase (" + round + ")");
             try {
                 // notification phase
                 broadcast(new Message(Message.Type.NOTIFICATION, round, value));
 
-            /*Awaiting messages*/
+                /*Awaiting messages*/
                 while (countMessagesOfType(Message.Type.NOTIFICATION) < (totalNodes - maliciousNodes)) {
                     try {
                         Thread.sleep(500);
@@ -55,7 +65,7 @@ public class DA_BenOr extends UnicastRemoteObject implements DA_BenOr_RMI, Runna
                         e.printStackTrace();
                     }
                 }
-
+                System.out.println("[" + id + "] entering proposal phase (" + round + ")");
                 // proposal phase
                 int notificationValue = findNotificationValue();
                 broadcast(new Message(Message.Type.PROPOSAL, round, notificationValue));
@@ -64,12 +74,14 @@ public class DA_BenOr extends UnicastRemoteObject implements DA_BenOr_RMI, Runna
                     break;
                 }
                 else {
-                    messages = new ArrayList<>();
+                    //synchronized(msgLock) {
+                    //    messages = new ArrayList<>();
+                    //}
                     while (countMessagesOfType(Message.Type.PROPOSAL) < (totalNodes - maliciousNodes)) {
                         Thread.sleep(500);
                     }
                 }
-
+                System.out.println("[" + id + "] entering decision phase (" + round + ")");
                 // decision phase
                 int proposalValue = findProposalValue();
                 if (proposalValue != -1) {
@@ -77,7 +89,8 @@ public class DA_BenOr extends UnicastRemoteObject implements DA_BenOr_RMI, Runna
                     if (countMessagesOfTypeAndValue(Message.Type.PROPOSAL, value) > (3 * maliciousNodes)){
                         ultimateChosenValue = value;
                         decided = true;
-                        System.out.println("[" + id + "] Decided");
+                        System.out.println("[" + id + "] decided on " + ultimateChosenValue);
+                        break;
                     }
                 } else {
                     Random random = new Random();
@@ -131,19 +144,25 @@ public class DA_BenOr extends UnicastRemoteObject implements DA_BenOr_RMI, Runna
     }
 
     private long countMessagesOfType(Message.Type requiredType){
-        return messages.stream()
-                .filter(m -> m.type == requiredType)
-                .count();
+        long ret = 0;
+        synchronized (msgLock) {
+            ret = messages.stream()
+                    .filter(m -> m.type == requiredType)
+                    .count();
+        }
+        return ret;
     }
 
     private int findNotificationValue(){
         int zeroCounter = 0;
         int oneCounter = 0;
-        for (Message msg : messages){
-            switch (msg.value) {
-                case 0: zeroCounter++; break;
-                case 1: oneCounter++; break;
-                default: break;
+        synchronized (msgLock) {
+            for (Message msg : messages){
+                switch (msg.value) {
+                    case 0: zeroCounter++; break;
+                    case 1: oneCounter++; break;
+                    default: break;
+                }
             }
         }
         if (zeroCounter > (totalNodes + maliciousNodes)/2) {
@@ -160,11 +179,13 @@ public class DA_BenOr extends UnicastRemoteObject implements DA_BenOr_RMI, Runna
     private int findProposalValue() {
         int zeroCounter = 0;
         int oneCounter = 0;
-        for (Message msg : messages){
-            switch (msg.value) {
-                case 0: zeroCounter++; break;
-                case 1: oneCounter++; break;
-                default: break;
+        synchronized(msgLock) {
+            for (Message msg : messages){
+                switch (msg.value) {
+                    case 0: zeroCounter++; break;
+                    case 1: oneCounter++; break;
+                    default: break;
+                }
             }
         }
         if (zeroCounter > maliciousNodes) {
@@ -179,9 +200,13 @@ public class DA_BenOr extends UnicastRemoteObject implements DA_BenOr_RMI, Runna
     }
 
     private long countMessagesOfTypeAndValue(Message.Type requiredType, int requiredValue){
-        return messages.stream()
-                .filter(m -> m.type == requiredType)
-                .filter(m -> m.value == requiredValue)
-                .count();
+        long ret = 0;
+        synchronized(msgLock) {
+            ret = messages.stream()
+                    .filter(m -> m.type == requiredType)
+                    .filter(m -> m.value == requiredValue)
+                    .count();
+        }
+        return ret;
     }
 }
