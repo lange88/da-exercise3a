@@ -1,11 +1,14 @@
-package interfaces;
+class Message {
 
-public class Message {
-    public enum MessageType {
-        Notification, Proposal;
+    final Type type;
+    private final int round;
+    final int value;
+
+    Message(Type type, int round, int value){
+        this.type = type;
+        this.round = round;
+        this.value = value;
     }
 
-    public MessageType type;
-    public int round;
-    public int value;
+    enum Type {NOTIFICATION, PROPOSAL}
 }

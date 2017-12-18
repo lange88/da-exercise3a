@@ -35,7 +35,7 @@ public class DA_BenOr_main {
             String name = "rmi://localhost:1099/DA_BenOr_" + i;
             DA_BenOr da = null;
             try {
-                da = new DA_BenOr(i, processIds, remoteProcessIds, remoteHost);
+                da = new DA_BenOr(i, processIds, remoteProcessIds, 1, remoteHost);
                 java.rmi.Naming.bind(name, da);
             } catch (AlreadyBoundException e) {
                 System.out.println("AlreadyBoundException occurred while binding object with RMI name: " + name);
