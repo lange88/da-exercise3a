@@ -8,12 +8,14 @@ import java.util.Arrays;
 
 /**
  * Created by jeroen on 12/8/17.
+ * Run with the following VM options:
+ * -Djava.security.policy=my.policy -Djava.rmi.server.hostname=192.168.56.101
  */
 public class DA_BenOr_main {
     public static void main(String... args) {
         int processIds[] = {1, 2, 3, 4, 5};
         int remoteProcessIds[] = {6, 7, 8, 9, 10};
-        String remoteHost = "10.0.0.2";
+        String remoteHost = "192.168.56.102";
 
         // Create and install a security manager because we are using multiple
         // physical machines.
@@ -30,7 +32,7 @@ public class DA_BenOr_main {
         }
 
         for (int i : processIds) {
-            String name = "rmi://localhost/DA_BenOr_" + i;
+            String name = "rmi://localhost:1099/DA_BenOr_" + i;
             DA_BenOr da = null;
             try {
                 da = new DA_BenOr(i, processIds, remoteProcessIds, remoteHost);

@@ -23,7 +23,7 @@ public class DA_BenOr extends UnicastRemoteObject implements DA_BenOr_RMI, Runna
     private void broadCast(String message) {
         // connect to local processes
         for (int processId : processIds) {
-            String name = "rmi://localhost/DA_BenOr_" + processId;
+            String name = "rmi://localhost:1099/DA_BenOr_" + processId;
             try {
                 DA_BenOr_RMI o = (DA_BenOr_RMI) java.rmi.Naming.lookup(name);
                 o.receive(message);
@@ -41,7 +41,7 @@ public class DA_BenOr extends UnicastRemoteObject implements DA_BenOr_RMI, Runna
 
         // connect to remote processes
         for (int processId : remoteProcessIds) {
-            String name = "rmi://" + remoteHost + "/DA_BenOr_" + processId;
+            String name = "rmi://" + remoteHost + ":1099/DA_BenOr_" + processId;
             try {
                 DA_BenOr_RMI o = (DA_BenOr_RMI) java.rmi.Naming.lookup(name);
                 o.receive(message);
