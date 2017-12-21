@@ -76,7 +76,7 @@ public class DA_BenOr extends UnicastRemoteObject implements DA_BenOr_RMI, Runna
                 else {
                     //synchronized(msgLock) {
                     //    messages = new ArrayList<>();
-                    //}
+                   // }
                     while (countMessagesOfType(Message.Type.PROPOSAL) < (totalNodes - maliciousNodes)) {
                         Thread.sleep(100);
                     }
@@ -86,7 +86,7 @@ public class DA_BenOr extends UnicastRemoteObject implements DA_BenOr_RMI, Runna
                 int proposalValue = findProposalValue();
                 if (proposalValue != -1) {
                     value = proposalValue;
-                    if (countMessagesOfTypeAndValue(Message.Type.PROPOSAL, value) > (3 * maliciousNodes)){
+                    if (countMessagesOfTypeAndValue(Message.Type.PROPOSAL, value) > ((totalNodes + maliciousNodes)/2)){
                         ultimateChosenValue = value;
                         decided = true;
                         System.out.println("[" + id + "] decided on " + ultimateChosenValue);
@@ -165,11 +165,11 @@ public class DA_BenOr extends UnicastRemoteObject implements DA_BenOr_RMI, Runna
                 }
             }
         }
-        if (zeroCounter > (totalNodes + maliciousNodes)/2) {
-            return 0;
-        }
         if (oneCounter  > (totalNodes + maliciousNodes)/2){
             return 1;
+        }
+        if (zeroCounter > (totalNodes + maliciousNodes)/2) {
+            return 0;
         }
         else {
             return -1;
@@ -188,14 +188,15 @@ public class DA_BenOr extends UnicastRemoteObject implements DA_BenOr_RMI, Runna
                 }
             }
         }
-        if (zeroCounter > maliciousNodes) {
-            return 0;
-        }
-        if (oneCounter  > maliciousNodes){
+        if (oneCounter  > zeroCounter && oneCounter > maliciousNodes){
             return 1;
         }
+        if (zeroCounter > oneCounter && zeroCounter > maliciousNodes) {
+            return 0;
+        }
         else {
-            return -1;
+            Random random = new Random();
+            return random.nextInt(2);
         }
     }
 
