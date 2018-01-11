@@ -5,10 +5,7 @@ import java.net.MalformedURLException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 public class DA_BenOr extends UnicastRemoteObject implements DA_BenOr_RMI, Runnable {
     private int id;
@@ -22,7 +19,8 @@ public class DA_BenOr extends UnicastRemoteObject implements DA_BenOr_RMI, Runna
 
     private List<Message> messages = Collections.synchronizedList(new ArrayList<Message>());
     private int ultimateChosenValue = -1;
-    private int value = -1;
+    private int value = new Random().nextInt(2);
+    HashMap<Integer, Integer> randomValues = new HashMap<>();
 
     DA_BenOr(int id, int[] processIds, int[] remoteProcessIds, int fractionMalicious, String remoteHost, boolean malicious) throws RemoteException {
         this.id = id;
@@ -54,11 +52,24 @@ public class DA_BenOr extends UnicastRemoteObject implements DA_BenOr_RMI, Runna
         boolean decided = false;
 
         while(true) {
-            System.out.println("[" + id + "] entering notification phase (" + round + ")");
+            System.out.println("[" + id + "] entering notification phase (" + round + ") value: " + value + " malicious=" + isMalicious);
             try {
                 // notification phase
                 Thread.sleep(new Random().nextInt(2000)); // random delay before broadcasting
-                broadcast(new Message(Message.Type.NOTIFICATION, round, value));
+
+                if (isMalicious) {
+                    // randomly decide to send or not
+                    if (new Random().nextFloat() < (1.00 / 2.00)) {
+                        // decide to send correct value of random one
+                        if (new Random().nextFloat() < (1.00 / 2.00)) {
+                            broadcast(new Message(Message.Type.NOTIFICATION, round, value));
+                        } else {
+                            broadcast(new Message(Message.Type.NOTIFICATION, round, new Random().nextInt(2)));
+                        }
+                    }
+                } else {
+                    broadcast(new Message(Message.Type.NOTIFICATION, round, value));
+                }
 
                 /*Awaiting messages*/
                 while (countMessagesOfType(Message.Type.NOTIFICATION) < (totalNodes - maliciousNodes)) {
@@ -68,7 +79,20 @@ public class DA_BenOr extends UnicastRemoteObject implements DA_BenOr_RMI, Runna
                 // proposal phase
                 int notificationValue = findNotificationValue();
                 Thread.sleep(new Random().nextInt(2000)); // random delay before broadcasting
-                broadcast(new Message(Message.Type.PROPOSAL, round, notificationValue));
+
+                if (isMalicious) {
+                    // randomly decide to send or not
+                    if (new Random().nextFloat() < (1.00 / 2.00)) {
+                        // decide to send correct value of random one
+                        if (new Random().nextFloat() < (1.00 / 2.00)) {
+                            broadcast(new Message(Message.Type.NOTIFICATION, round, notificationValue));
+                        } else {
+                            broadcast(new Message(Message.Type.NOTIFICATION, round, new Random().nextInt(2)));
+                        }
+                    }
+                } else {
+                    broadcast(new Message(Message.Type.NOTIFICATION, round, notificationValue));
+                }
 
                 if (decided) {
                     break;
@@ -90,11 +114,13 @@ public class DA_BenOr extends UnicastRemoteObject implements DA_BenOr_RMI, Runna
                         ultimateChosenValue = value;
                         decided = true;
                         System.out.println("[" + id + "] decided on " + ultimateChosenValue);
+                        printRandomValues();
                         break;
                     }
                 } else {
                     Random random = new Random();
                     value = random.nextInt(2);
+                    randomValues.put(round, value);
                 }
                 round++;
             } catch (InterruptedException e1) {
@@ -103,6 +129,14 @@ public class DA_BenOr extends UnicastRemoteObject implements DA_BenOr_RMI, Runna
                 return;
             }
         }
+    }
+
+    private void printRandomValues() {
+        System.out.print("[" + id + "] random values used: ");
+        for (Integer i : randomValues.keySet()) {
+            System.out.print(i + ":" + randomValues.get(i) + " ");
+        }
+        System.out.print("\n");
     }
 
     private void broadcast(Message message) {

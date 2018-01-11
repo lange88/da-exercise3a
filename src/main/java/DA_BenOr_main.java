@@ -14,10 +14,10 @@ import java.util.stream.IntStream;
  */
 public class DA_BenOr_main {
     public static void main(String... args) {
-        int processIds[] = IntStream.range(11, 20).toArray();
-        int remoteProcessIds[] = IntStream.range(1, 10).toArray();
+        int processIds[] = IntStream.range(1, 11).toArray();
+        int remoteProcessIds[] = IntStream.range(11, 21).toArray();
         int fractionMalicious = 20;
-        String remoteHost = "145.94.212.181";
+        String remoteHost = "145.94.152.27";
 
         // Create and install a security manager because we are using multiple
         // physical machines.
@@ -34,7 +34,7 @@ public class DA_BenOr_main {
         }
 
         for (int i : processIds) {
-            boolean malicious = new Random().nextFloat() < (1 / fractionMalicious);
+            boolean malicious = new Random().nextFloat() < (1.00 / fractionMalicious);
             String name = "rmi://localhost:1099/DA_BenOr_" + i;
             DA_BenOr da = null;
             try {
