@@ -10,20 +10,20 @@ import java.util.stream.IntStream;
 /**
  * Created by jeroen on 12/8/17.
  * Run with the following VM options:
- * -Djava.security.policy=my.policy -Djava.rmi.server.hostname=192.168.56.101
+ * -Djava.security.policy=my.policy -Djava.rmi.server.hostname=145.94.214.81
  */
 public class DA_BenOr_main {
     public static void main(String... args) {
-        int processIds[] = IntStream.range(1, 11).toArray();
-        int remoteProcessIds[] = IntStream.range(11, 21).toArray();
-        int fractionMalicious = 20;
-        String remoteHost = "145.94.152.27";
+        int processIds[] = IntStream.range(1, 21).toArray();
+        int remoteProcessIds[] = IntStream.range(21, 41).toArray();
+        int fractionMalicious = 6;
+        //String remoteHost = "145.94.152.27";
 
         // Create and install a security manager because we are using multiple
         // physical machines.
-        if (System.getSecurityManager() == null) {
-            System.setSecurityManager(new SecurityManager());
-        }
+        //if (System.getSecurityManager() == null) {
+        //    System.setSecurityManager(new SecurityManager());
+        //}
 
         // create local registry so RMI can register itself
         try {
@@ -35,10 +35,10 @@ public class DA_BenOr_main {
 
         for (int i : processIds) {
             boolean malicious = new Random().nextFloat() < (1.00 / fractionMalicious);
-            String name = "rmi://localhost:1099/DA_BenOr_" + i;
+            String name = "rmi://localhost/DA_BenOr_" + i;
             DA_BenOr da = null;
             try {
-                da = new DA_BenOr(i, processIds, remoteProcessIds, fractionMalicious, remoteHost, malicious);
+                da = new DA_BenOr(i, processIds, fractionMalicious, false);
                 java.rmi.Naming.bind(name, da);
             } catch (AlreadyBoundException e) {
                 System.out.println("AlreadyBoundException occurred while binding object with RMI name: " + name);

@@ -21,65 +21,65 @@ public class DA_BenOr extends UnicastRemoteObject implements DA_BenOr_RMI, Runna
     private int ultimateChosenValue = -1;
     private int value = new Random().nextInt(2);
     HashMap<Integer, Integer> randomValues = new HashMap<>();
+    private boolean decided = false;
 
-    DA_BenOr(int id, int[] processIds, int[] remoteProcessIds, int fractionMalicious, String remoteHost, boolean malicious) throws RemoteException {
+    DA_BenOr(int id, int[] processIds, int fractionMalicious, boolean malicious) throws RemoteException {
         this.id = id;
         this.processIds = processIds;
-        this.remoteProcessIds = remoteProcessIds;
-        this.remoteHost = remoteHost;
-        this.totalNodes = processIds.length + remoteProcessIds.length;
+        this.totalNodes = processIds.length;
         this.maliciousNodes = totalNodes / fractionMalicious;
         this.isMalicious = malicious;
     }
 
     @Override
     public void receive(Message m) throws RemoteException {
-        synchronized(msgLock) {
             messages.add(m);
-        }
-        System.out.println("[" + id + "] received message " + m);
+        if (!decided) System.out.println("[" + id + "] received message " + m);
     }
 
     @Override
     public void run() {
         try {
-            Thread.sleep(5000);
+            Thread.sleep(1000 + new Random().nextInt(1000));
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
 
         int round = 1;
-        boolean decided = false;
+        decided = false;
 
         while(true) {
-            System.out.println("[" + id + "] entering notification phase (" + round + ") value: " + value + " malicious=" + isMalicious);
+            if (!decided) System.out.println("[" + id + "] entering notification phase (" + round + ") value: " + value + " malicious=" + isMalicious);
             try {
                 // notification phase
+                messages = new ArrayList<>();
                 Thread.sleep(new Random().nextInt(2000)); // random delay before broadcasting
 
-                if (isMalicious) {
-                    // randomly decide to send or not
-                    if (new Random().nextFloat() < (1.00 / 2.00)) {
-                        // decide to send correct value of random one
-                        if (new Random().nextFloat() < (1.00 / 2.00)) {
-                            broadcast(new Message(Message.Type.NOTIFICATION, round, value));
-                        } else {
-                            broadcast(new Message(Message.Type.NOTIFICATION, round, new Random().nextInt(2)));
-                        }
-                    }
-                } else {
-                    broadcast(new Message(Message.Type.NOTIFICATION, round, value));
-                }
+                //if (isMalicious) {
+                //    // randomly decide to send or not
+                //    if (new Random().nextFloat() < (1.00 / 2.00)) {
+                //        // decide to send correct value of random one
+                //        if (new Random().nextFloat() < (1.00 / 2.00)) {
+                //            broadcast(new Message(Message.Type.NOTIFICATION, round, value));
+                //        } else {
+                //            broadcast(new Message(Message.Type.NOTIFICATION, round, new Random().nextInt(2)));
+                //        }
+                //    }
+                //} else {
+                //    broadcast(new Message(Message.Type.NOTIFICATION, round, value));
+                //}
+
+                broadcast(new Message(Message.Type.NOTIFICATION, round, value));
 
                 /*Awaiting messages*/
                 while (countMessagesOfType(Message.Type.NOTIFICATION) < (totalNodes - maliciousNodes)) {
                     Thread.sleep(100);
                 }
-                System.out.println("[" + id + "] entering proposal phase (" + round + ")");
+                if (!decided) System.out.println("[" + id + "] entering proposal phase (" + round + ")");
                 // proposal phase
                 int notificationValue = findNotificationValue();
                 Thread.sleep(new Random().nextInt(2000)); // random delay before broadcasting
-
+/*
                 if (isMalicious) {
                     // randomly decide to send or not
                     if (new Random().nextFloat() < (1.00 / 2.00)) {
@@ -92,15 +92,14 @@ public class DA_BenOr extends UnicastRemoteObject implements DA_BenOr_RMI, Runna
                     }
                 } else {
                     broadcast(new Message(Message.Type.NOTIFICATION, round, notificationValue));
-                }
+                }*/
+                broadcast(new Message(Message.Type.PROPOSAL, round, notificationValue));
 
                 if (decided) {
                     break;
                 }
                 else {
-                    //synchronized(msgLock) {
-                    //    messages = new ArrayList<>();
-                   // }
+                    //messages = new ArrayList<>();
                     while (countMessagesOfType(Message.Type.PROPOSAL) < (totalNodes - maliciousNodes)) {
                         Thread.sleep(100);
                     }
@@ -115,7 +114,6 @@ public class DA_BenOr extends UnicastRemoteObject implements DA_BenOr_RMI, Runna
                         decided = true;
                         System.out.println("[" + id + "] decided on " + ultimateChosenValue);
                         printRandomValues();
-                        break;
                     }
                 } else {
                     Random random = new Random();
@@ -157,48 +155,31 @@ public class DA_BenOr extends UnicastRemoteObject implements DA_BenOr_RMI, Runna
                 e1.printStackTrace();
             }
         }
-
-        // connect to remote processes
-        for (int processId : remoteProcessIds) {
-            String name = "rmi://" + remoteHost + ":1099/DA_BenOr_" + processId;
-            try {
-                DA_BenOr_RMI o = (DA_BenOr_RMI) java.rmi.Naming.lookup(name);
-                o.receive(message);
-            } catch (NotBoundException e1) {
-                System.out.println("NotBoundException while sending message for name: " + name);
-                e1.printStackTrace();
-            } catch (MalformedURLException e1) {
-                System.out.println("MalformedURLException while sending message for name: " + name);
-                e1.printStackTrace();
-            } catch (RemoteException e1) {
-                System.out.println("RemoteException while sending message for name: " + name);
-                e1.printStackTrace();
-            }
-        }
     }
 
     private long countMessagesOfType(Message.Type requiredType){
         long ret = 0;
-        synchronized (msgLock) {
             ret = messages.stream()
                     .filter(m -> m.type == requiredType)
                     .count();
-        }
         return ret;
     }
 
     private int findNotificationValue(){
         int zeroCounter = 0;
         int oneCounter = 0;
-        synchronized (msgLock) {
-            for (Message msg : messages){
+            for (Message msg : messages) {
                 switch (msg.value) {
-                    case 0: zeroCounter++; break;
-                    case 1: oneCounter++; break;
-                    default: break;
+                    case 0:
+                        zeroCounter++;
+                        break;
+                    case 1:
+                        oneCounter++;
+                        break;
+                    default:
+                        break;
                 }
             }
-        }
         if (oneCounter  > (totalNodes + maliciousNodes)/2){
             return 1;
         }
@@ -213,15 +194,18 @@ public class DA_BenOr extends UnicastRemoteObject implements DA_BenOr_RMI, Runna
     private int findProposalValue() {
         int zeroCounter = 0;
         int oneCounter = 0;
-        synchronized(msgLock) {
-            for (Message msg : messages){
+            for (Message msg : messages) {
                 switch (msg.value) {
-                    case 0: zeroCounter++; break;
-                    case 1: oneCounter++; break;
-                    default: break;
+                    case 0:
+                        zeroCounter++;
+                        break;
+                    case 1:
+                        oneCounter++;
+                        break;
+                    default:
+                        break;
                 }
             }
-        }
         if (oneCounter  > zeroCounter && oneCounter > maliciousNodes){
             return 1;
         }
@@ -236,12 +220,11 @@ public class DA_BenOr extends UnicastRemoteObject implements DA_BenOr_RMI, Runna
 
     private long countMessagesOfTypeAndValue(Message.Type requiredType, int requiredValue){
         long ret = 0;
-        synchronized(msgLock) {
             ret = messages.stream()
                     .filter(m -> m.type == requiredType)
                     .filter(m -> m.value == requiredValue)
                     .count();
-        }
+
         return ret;
     }
 }
