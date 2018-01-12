@@ -16,7 +16,7 @@ public class DA_BenOr_main {
     public static void main(String... args) {
         int processIds[] = IntStream.range(1, 21).toArray();
         int remoteProcessIds[] = IntStream.range(21, 41).toArray();
-        int fractionMalicious = 6;
+        int fractionMalicious = 20;
         //String remoteHost = "145.94.152.27";
 
         // Create and install a security manager because we are using multiple
@@ -38,7 +38,7 @@ public class DA_BenOr_main {
             String name = "rmi://localhost/DA_BenOr_" + i;
             DA_BenOr da = null;
             try {
-                da = new DA_BenOr(i, processIds, fractionMalicious, false);
+                da = new DA_BenOr(i, processIds, fractionMalicious, malicious);
                 java.rmi.Naming.bind(name, da);
             } catch (AlreadyBoundException e) {
                 System.out.println("AlreadyBoundException occurred while binding object with RMI name: " + name);

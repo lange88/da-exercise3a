@@ -52,24 +52,24 @@ public class DA_BenOr extends UnicastRemoteObject implements DA_BenOr_RMI, Runna
             if (!decided) System.out.println("[" + id + "] entering notification phase (" + round + ") value: " + value + " malicious=" + isMalicious);
             try {
                 // notification phase
-                messages = new ArrayList<>();
+                messages = Collections.synchronizedList(new ArrayList<Message>());
                 Thread.sleep(new Random().nextInt(2000)); // random delay before broadcasting
 
-                //if (isMalicious) {
-                //    // randomly decide to send or not
-                //    if (new Random().nextFloat() < (1.00 / 2.00)) {
-                //        // decide to send correct value of random one
-                //        if (new Random().nextFloat() < (1.00 / 2.00)) {
-                //            broadcast(new Message(Message.Type.NOTIFICATION, round, value));
-                //        } else {
-                //            broadcast(new Message(Message.Type.NOTIFICATION, round, new Random().nextInt(2)));
-                //        }
-                //    }
-                //} else {
-                //    broadcast(new Message(Message.Type.NOTIFICATION, round, value));
-                //}
+                if (isMalicious) {
+                // randomly decide to send or not
+                    if (new Random().nextFloat() < 0.5) {
+                        // decide to send correct value of random one
+                        if (new Random().nextFloat() < 0.5) {
+                            broadcast(new Message(Message.Type.NOTIFICATION, round, value));
+                        } else {
+                            broadcast(new Message(Message.Type.NOTIFICATION, round, new Random().nextInt(2)));
+                        }
+                    }
+                } else {
+                    broadcast(new Message(Message.Type.NOTIFICATION, round, value));
+                }
 
-                broadcast(new Message(Message.Type.NOTIFICATION, round, value));
+                //broadcast(new Message(Message.Type.NOTIFICATION, round, value));
 
                 /*Awaiting messages*/
                 while (countMessagesOfType(Message.Type.NOTIFICATION) < (totalNodes - maliciousNodes)) {
@@ -79,12 +79,12 @@ public class DA_BenOr extends UnicastRemoteObject implements DA_BenOr_RMI, Runna
                 // proposal phase
                 int notificationValue = findNotificationValue();
                 Thread.sleep(new Random().nextInt(2000)); // random delay before broadcasting
-/*
+
                 if (isMalicious) {
                     // randomly decide to send or not
-                    if (new Random().nextFloat() < (1.00 / 2.00)) {
+                    if (new Random().nextFloat() < (0.5)) {
                         // decide to send correct value of random one
-                        if (new Random().nextFloat() < (1.00 / 2.00)) {
+                        if (new Random().nextFloat() < (0.5)) {
                             broadcast(new Message(Message.Type.NOTIFICATION, round, notificationValue));
                         } else {
                             broadcast(new Message(Message.Type.NOTIFICATION, round, new Random().nextInt(2)));
@@ -92,8 +92,8 @@ public class DA_BenOr extends UnicastRemoteObject implements DA_BenOr_RMI, Runna
                     }
                 } else {
                     broadcast(new Message(Message.Type.NOTIFICATION, round, notificationValue));
-                }*/
-                broadcast(new Message(Message.Type.PROPOSAL, round, notificationValue));
+                }
+                //broadcast(new Message(Message.Type.PROPOSAL, round, notificationValue));
 
                 if (decided) {
                     break;
