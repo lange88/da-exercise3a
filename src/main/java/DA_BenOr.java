@@ -55,6 +55,7 @@ public class DA_BenOr extends UnicastRemoteObject implements DA_BenOr_RMI, Runna
                 messages = Collections.synchronizedList(new ArrayList<Message>());
                 Thread.sleep(new Random().nextInt(2000)); // random delay before broadcasting
 
+                // random failure pattern
                 if (isMalicious) {
                 // randomly decide to send or not
                     if (new Random().nextFloat() < 0.5) {
@@ -80,6 +81,7 @@ public class DA_BenOr extends UnicastRemoteObject implements DA_BenOr_RMI, Runna
                 int notificationValue = findNotificationValue();
                 Thread.sleep(new Random().nextInt(2000)); // random delay before broadcasting
 
+                // random failure pattern
                 if (isMalicious) {
                     // randomly decide to send or not
                     if (new Random().nextFloat() < (0.5)) {
